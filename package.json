@@ -1,0 +1,32 @@
+{
+  "name": "discord-feed",
+  "version": "1.0.0",
+  "description": "Universal Social Media Feed Discord Bot — supports Instagram, Facebook, Twitter, YouTube, TikTok, Reddit, and more via RSS bridges",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "feed",
+    "social-media",
+    "instagram",
+    "facebook",
+    "twitter",
+    "youtube",
+    "rss"
+  ],
+  "author": "shirakamif30",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "better-sqlite3": "^11.7.0",
+    "fast-xml-parser": "^4.5.0",
+    "undici": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}
