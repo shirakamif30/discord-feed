@@ -1,11 +1,12 @@
 {
   "name": "discord-feed",
   "version": "1.0.0",
-  "description": "Universal Social Media Feed Discord Bot — supports Instagram, Facebook, Twitter, YouTube, TikTok, Reddit, and more via RSS bridges",
+  "description": "Universal Social Media Feed Discord Bot — supports Instagram, Facebook, Twitter/X, YouTube, TikTok, Reddit via RSS bridges with HD media",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "node --watch index.js"
+    "dev": "node --watch index.js",
+    "install:deps": "bash install.sh"
   },
   "keywords": [
     "discord",
@@ -22,11 +23,11 @@
   "license": "MIT",
   "dependencies": {
     "discord.js": "^14.16.3",
-    "better-sqlite3": "^11.7.0",
+    "sql.js": "^1.11.0",
     "fast-xml-parser": "^4.5.0",
     "undici": "^7.0.0"
   },
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=18.0.0"
   }
 }

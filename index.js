@@ -17,7 +17,6 @@ const loadCommands = require('./src/commands/loader');
 
 // ─── Load Token ──────────────────────────────────────────────────────────────
 function loadToken() {
-  // Priority: config.json > .env > process.env
   const configPath = join(__dirname, 'config.json');
   if (existsSync(configPath)) {
     try {
@@ -26,13 +25,10 @@ function loadToken() {
         Logger.info('Token loaded from config.json');
         return cfg.token;
       }
-    } catch { /* ignore parse errors */ }
+    } catch { /* ignore */ }
   }
 
-  // Try .env
-  try {
-    require('dotenv').config();
-  } catch { /* dotenv not installed, fine */ }
+  try { require('dotenv').config(); } catch { /* dotenv optional */ }
 
   if (process.env.DISCORD_TOKEN) {
     Logger.info('Token loaded from environment variable');
@@ -46,15 +42,16 @@ function loadToken() {
 // ─── Main ────────────────────────────────────────────────────────────────────
 async function main() {
   const token = loadToken();
+
+  // Initialize database (async for sql.js)
   const db = new Database();
+  await db.ready();
+  Logger.info('Database ready');
+
   const client = new Client({
-    intents: [
-      GatewayIntentBits.Guilds,
-      GatewayIntentBits.GuildMessages,
-    ],
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
   });
 
-  // Initialize feed manager
   const feedManager = new FeedManager(client, db);
 
   // Load commands
@@ -64,32 +61,30 @@ async function main() {
     client.commands.set(cmd.data.name, cmd);
   }
 
-  // ─── Register Slash Commands ─────────────────────────────────────────────
+  // ─── Ready Event ─────────────────────────────────────────────────────────
   client.once('ready', async () => {
     Logger.info(`Logged in as ${client.user.tag}`);
     client.user.setActivity('social media feeds', { type: ActivityType.Watching });
 
-    // Register slash commands globally
+    // Register slash commands
     const rest = new REST({ version: '10' }).setToken(token);
     const commandData = commands.map(c => c.data.toJSON());
 
     try {
       Logger.info(`Registering ${commandData.length} slash commands...`);
       await rest.put(Routes.applicationCommands(client.user.id), { body: commandData });
-      Logger.info('Slash commands registered successfully');
+      Logger.info('Slash commands registered');
     } catch (err) {
       Logger.error('Failed to register commands:', err);
     }
 
-    // Start feed polling
     feedManager.startPolling();
     Logger.info('Feed polling started');
   });
 
-  // ─── Handle Slash Commands ───────────────────────────────────────────────
+  // ─── Command Handler ─────────────────────────────────────────────────────
   client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
-
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
 
@@ -97,10 +92,7 @@ async function main() {
       await command.execute(interaction);
     } catch (err) {
       Logger.error(`Command ${interaction.commandName} error:`, err);
-      const reply = {
-        content: '❌ An error occurred while executing this command.',
-        ephemeral: true,
-      };
+      const reply = { content: '❌ An error occurred while executing this command.', ephemeral: true };
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp(reply);
       } else {
@@ -109,7 +101,7 @@ async function main() {
     }
   });
 
-  // ─── Graceful Shutdown ───────────────────────────────────────────────────
+  // ─── Shutdown ────────────────────────────────────────────────────────────
   const shutdown = () => {
     Logger.info('Shutting down...');
     feedManager.stopPolling();
@@ -120,7 +112,6 @@ async function main() {
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 
-  // ─── Login ───────────────────────────────────────────────────────────────
   await client.login(token);
 }
 
